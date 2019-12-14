@@ -117,7 +117,7 @@ def setup(args):
     cfg.merge_from_file(args.config_file)
     cfg.merge_from_list(args.opts)
     cfg.freeze()
-    default_setup(cfg, args)
+    default_setup(cfg, args)    # 基本设置，包括设置打印，环境信息等
     return cfg
 
 

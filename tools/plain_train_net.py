@@ -84,7 +84,7 @@ def get_evaluator(cfg, dataset_name, output_folder=None):
     if evaluator_type == "cityscapes":
         assert (
             torch.cuda.device_count() >= comm.get_rank()
-        ), "CityscapesEvaluator currently do not work with multiple machines."
+        ), "Cityscapes Evaluator currently do not work with multiple machines."
         return CityscapesEvaluator(dataset_name)
     if evaluator_type == "pascal_voc":
         return PascalVOCDetectionEvaluator(dataset_name)
