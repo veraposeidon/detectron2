@@ -1,3 +1,6 @@
+# coding = utf-8
+# comet.ml实验管理
+
 from comet_ml import Experiment
 
 
