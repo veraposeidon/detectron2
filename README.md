@@ -1,10 +1,6 @@
 <img src=".github/Detectron2-Logo-Horz.svg" width="300" >
 
 ## 简介
-fork自FAIR,用于自己研究毕业设计。
-- 深度学习服务器下代码端不涉及版本更新，只与Windows下代码版本保持同步，并用于执行代码；
-- Windows下代码用于编写调试，并根据本Repo进行代码版本管理；
-- FAIR的源Repo一旦有代码更新，则在线上发起pull&request，进行整合，并pull至windows本地。
 参考：[github上fork了别人的项目后，再同步更新别人的提交](https://blog.csdn.net/qq1332479771/article/details/56087333)
 
 
