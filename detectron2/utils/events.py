@@ -1,4 +1,6 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved
+from tools.comet_experiment import Experiment
+
 import datetime
 import json
 import logging
@@ -199,6 +201,12 @@ lr: {lr}  {memory}\
                 memory="max_mem: {:.0f}M".format(max_mem_mb) if max_mem_mb is not None else "",
             )
         )
+
+        # comet.ml记录
+        for k,v in storage.histories().items():
+            Experiment.experiment.log_metric(k, v.median(20), step=iteration)
+        Experiment.experiment.log_metric("lr", lr, step=iteration)
+        Experiment.experiment.log_metric("max_mem(M)", max_mem_mb, step=iteration)
 
 
 class EventStorage:

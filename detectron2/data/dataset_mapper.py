@@ -1,3 +1,4 @@
+# coding=utf-8
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved
 import copy
 import logging
@@ -31,6 +32,7 @@ class DatasetMapper:
     """
 
     def __init__(self, cfg, is_train=True):
+        # 读取cfg的配置参数，以辨别当前是何种类型的数据集
         if cfg.INPUT.CROP.ENABLED and is_train:
             self.crop_gen = T.RandomCrop(cfg.INPUT.CROP.TYPE, cfg.INPUT.CROP.SIZE)
             logging.getLogger(__name__).info("CropGen used in training: " + str(self.crop_gen))

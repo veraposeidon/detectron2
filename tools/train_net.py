@@ -15,8 +15,7 @@ Therefore, we recommend you to use detectron2 as an library and take
 this file as an example of how to use the library.
 You may want to write your own script with your datasets and other customizations.
 """
-from tools.comet_experiment import Experiment    # 用于记录实验数据
-
+from tools.comet_experiment import Experiment
 
 import logging
 import os
@@ -129,6 +128,7 @@ def main(args):
     cfg = setup(args)
 
     if args.eval_only:
+        Experiment.experiment.validate()    # 切换成验证模式
         model = Trainer.build_model(cfg)
         DetectionCheckpointer(model, save_dir=cfg.OUTPUT_DIR).resume_or_load(
             cfg.MODEL.WEIGHTS, resume=args.resume

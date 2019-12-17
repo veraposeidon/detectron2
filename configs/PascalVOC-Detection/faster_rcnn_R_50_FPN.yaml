@@ -13,6 +13,7 @@ DATASETS:
   TRAIN: ('voc_2007_trainval', 'voc_2012_trainval')
   TEST: ('voc_2007_test',)
 SOLVER:
+  IMS_PER_BATCH: 2
   STEPS: (12000, 16000)
   MAX_ITER: 18000  # 17.4 epochs
   WARMUP_ITERS: 100

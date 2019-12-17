@@ -1,3 +1,4 @@
+# coding=utf-8
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved
 import bisect
 import copy
@@ -323,6 +324,7 @@ def build_detection_train_loader(cfg, mapper=None):
     )
     images_per_worker = images_per_batch // num_workers
 
+    # 获得dataset_dicts
     dataset_dicts = get_detection_dataset_dicts(
         cfg.DATASETS.TRAIN,
         filter_empty=cfg.DATALOADER.FILTER_EMPTY_ANNOTATIONS,
@@ -331,6 +333,7 @@ def build_detection_train_loader(cfg, mapper=None):
         else 0,
         proposal_files=cfg.DATASETS.PROPOSAL_FILES_TRAIN if cfg.MODEL.LOAD_PROPOSALS else None,
     )
+    # 将dataset_dicts转化成torch.utils.data.Dataset
     dataset = DatasetFromList(dataset_dicts, copy=False)
 
     # Bin edges for batching images with similar aspect ratios. If ASPECT_RATIO_GROUPING
@@ -338,10 +341,12 @@ def build_detection_train_loader(cfg, mapper=None):
     group_bin_edges = [1] if cfg.DATALOADER.ASPECT_RATIO_GROUPING else []
     aspect_ratios = [float(img["height"]) / float(img["width"]) for img in dataset]
 
+    # 进一步转化成MapDataset，每次读取数据时都会调用mapper来对dict进行解析
     if mapper is None:
         mapper = DatasetMapper(cfg, True)
     dataset = MapDataset(dataset, mapper)
 
+    # 采样器
     sampler_name = cfg.DATALOADER.SAMPLER_TRAIN
     logger = logging.getLogger(__name__)
     logger.info("Using training sampler {}".format(sampler_name))
@@ -357,6 +362,7 @@ def build_detection_train_loader(cfg, mapper=None):
         sampler, images_per_worker, group_bin_edges, aspect_ratios
     )
 
+    # 数据迭代器 data_loader
     data_loader = torch.utils.data.DataLoader(
         dataset,
         num_workers=cfg.DATALOADER.NUM_WORKERS,
