@@ -7,3 +7,4 @@ maintainable.
 + [Scale-Aware Trident Networks for Object Detection](TridentNet)
 + [TensorMask: A Foundation for Dense Object Segmentation](TensorMask)
 + Mesh R-CNN.  (Coming Soon)
++ [Multi-Task：毕业论文实验项目](MultiTask)
