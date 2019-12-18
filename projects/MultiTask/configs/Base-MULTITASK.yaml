@@ -1,0 +1,3 @@
+DATASETS:
+  TRAIN: ("voc_al_train", )
+  TEST: ("voc_al_test",)
