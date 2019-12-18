@@ -39,3 +39,5 @@ dist/
 /detectron2/model_zoo/configs
 /datasets
 /models
+/project/MultiTask/datasets
+
