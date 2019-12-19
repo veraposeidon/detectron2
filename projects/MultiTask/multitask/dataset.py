@@ -36,7 +36,6 @@ def load_al_voc_instances(dir_name: str, split: str):
 
         r = {
             "file_name": jpeg_file,
-            "seg_file_name": segm_file,
             "image_id": fileid,
             "height": int(tree.findall("./size/height")[0].text),
             "width": int(tree.findall("./size/width")[0].text),
@@ -71,6 +70,7 @@ def load_al_voc_instances(dir_name: str, split: str):
         r["annotations"] = instances
         r["multi_labels"] = multi_labels
         r["multi_label_names"] = multi_label_names
+        r["seg_file_name"] = segm_file
         dicts.append(r)
     return dicts
 
