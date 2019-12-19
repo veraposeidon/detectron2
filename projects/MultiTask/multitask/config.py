@@ -1,4 +1,7 @@
 # coding=utf-8
+"""
+设置多任务实验的专属参数
+"""
 
 from detectron2.config import CfgNode as CN
 
