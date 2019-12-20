@@ -14,7 +14,7 @@ def add_multitask_config(cfg):
 
     # 使用多任务模式
     _C.MODEL.MULTI_TASK_ON = True
-    _C.MODEL.MULTI_TAK = CN()
+    _C.MODEL.MULTI_TASK = CN()
     # 开启多标签分类任务
     _C.MODEL.MULTI_TASK.CLASSIFICATION_ON = True
     # 开启目标检测任务

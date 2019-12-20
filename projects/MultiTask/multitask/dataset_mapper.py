@@ -114,6 +114,6 @@ class DatasetMapper:
 
         # FIXME: 多标签目前直接使用numpy，后面有需要再做处理吧
         if "multi_labels" in dataset_dict:
-            dataset_dict["multi_label"] = dataset_dict.pop("multi_labels")
+            dataset_dict["multi_labels"] = dataset_dict.pop("multi_labels")
 
         return dataset_dict

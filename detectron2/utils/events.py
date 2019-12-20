@@ -1,6 +1,4 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved
-from tools.comet_experiment import Experiment
-
 import datetime
 import json
 import logging
