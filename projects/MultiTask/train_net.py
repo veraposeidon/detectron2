@@ -5,20 +5,22 @@ MultiTask Training Script.
 This script is a simplified version of the training script in detectron2/tools.
 """
 
+from comet_experiment import Experiment
+
 import os
 
 import detectron2.utils.comm as comm
 from detectron2.checkpoint import DetectionCheckpointer
 from detectron2.config import get_cfg
 from detectron2.data import build_detection_test_loader, build_detection_train_loader
-from detectron2.engine import DefaultTrainer, default_argument_parser, default_setup, launch
+from detectron2.engine import default_argument_parser, default_setup, launch
 from detectron2.evaluation import PascalVOCDetectionEvaluator, DatasetEvaluators, verify_results
 from detectron2.utils.logger import setup_logger
 
-from .multitask import DatasetMapper, add_multitask_config
+from multitask import DatasetMapper, add_multitask_config, DefaultTrainerCometWriter
 
 
-class Trainer(DefaultTrainer):
+class Trainer(DefaultTrainerCometWriter):
     @classmethod
     def build_evaluator(cls, cfg, dataset_name):
         output_folder = os.path.join(cfg.OUTPUT_DIR, "inference")
@@ -50,6 +52,7 @@ def main(args):
     cfg = setup(args)
 
     if args.eval_only:
+        Experiment.experiment.validate()
         model = Trainer.build_model(cfg)
         DetectionCheckpointer(model, save_dir=cfg.OUTPUT_DIR).resume_or_load(
             cfg.MODEL.WEIGHTS, resume=args.resume

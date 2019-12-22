@@ -200,12 +200,6 @@ lr: {lr}  {memory}\
             )
         )
 
-        # comet.ml记录
-        for k,v in storage.histories().items():
-            Experiment.experiment.log_metric(k, v.median(20), step=iteration)
-        Experiment.experiment.log_metric("lr", lr, step=iteration)
-        Experiment.experiment.log_metric("max_mem(M)", max_mem_mb, step=iteration)
-
 
 class EventStorage:
     """
