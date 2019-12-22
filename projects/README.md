@@ -10,4 +10,5 @@ of support or stability of detectron2.
 + [Scale-Aware Trident Networks for Object Detection](TridentNet)
 + [TensorMask: A Foundation for Dense Object Segmentation](TensorMask)
 + Mesh R-CNN.  (Coming Soon)
++ PointRend: Image Segmentation as Rendering (Coming Soon)
 + [Multi-Task：毕业论文实验项目](MultiTask)
