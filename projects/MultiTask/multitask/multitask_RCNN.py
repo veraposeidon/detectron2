@@ -39,6 +39,10 @@ class GeneralizedRCNNMultiTask(nn.Module):
 
         self.device = torch.device(cfg.MODEL.DEVICE)
         self.backbone = build_backbone(cfg)
+        # TODO: build_classification_model
+
+        # TODO: build_segmentation_model
+
         self.proposal_generator = build_proposal_generator(cfg, self.backbone.output_shape())
         self.roi_heads = build_roi_heads(cfg, self.backbone.output_shape())
         self.vis_period = cfg.VIS_PERIOD
@@ -136,7 +140,7 @@ class GeneralizedRCNNMultiTask(nn.Module):
             proposal_losses = {}
 
         _, detector_losses = self.roi_heads(images, features, proposals, gt_instances)
-        if self.vis_period > 0:
+        if self.vis_period > 0:     # vis_period>0,就添加图像可视化
             storage = get_event_storage()
             if storage.iter % self.vis_period == 0:
                 self.visualize_training(batched_inputs, proposals)
