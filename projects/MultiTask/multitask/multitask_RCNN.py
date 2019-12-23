@@ -156,7 +156,7 @@ class GeneralizedRCNNMultiTask(nn.Module):
                                 else None
             # classifier_features = [features[f] for f in self.classifier_in_features]
             classifier_features = features[self.classifier_in_features[0]]
-            classifier_predict, multi_label_loss = self.classifier(classifier_features, classifier_targets)
+            classifier_predict, multi_label_losses = self.classifier(classifier_features, classifier_targets)
         else:
             multi_label_losses = {}
 
@@ -168,7 +168,7 @@ class GeneralizedRCNNMultiTask(nn.Module):
         losses = {}
         losses.update(detector_losses)
         losses.update(proposal_losses)
-        losses.update(multi_label_loss)
+        losses.update(multi_label_losses)
         return losses
 
     def inference(self, batched_inputs, detected_instances=None, do_postprocess=True):
