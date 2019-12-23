@@ -3,7 +3,6 @@
 multi task learning meta architecture.
 """
 
-
 import logging
 import numpy as np
 import torch
@@ -22,6 +21,8 @@ from detectron2.modeling import (
     detector_postprocess,
 )
 
+from .multiLabelClassifier import build_multilabel_classifier
+
 __all__ = ["GeneralizedRCNNMultiTask", ]
 
 
@@ -39,7 +40,13 @@ class GeneralizedRCNNMultiTask(nn.Module):
 
         self.device = torch.device(cfg.MODEL.DEVICE)
         self.backbone = build_backbone(cfg)
+
         # TODO: build_classification_model
+        if cfg.MODEL.MULTI_TASK.CLASSIFICATION_ON:
+            self.classifier_in_features = cfg.MODEL.MULTI_TASK.CLASSIFICATION_IN_FEATURES
+            self.classifier = build_multilabel_classifier(cfg)
+        else:
+            self.classifier = None
 
         # TODO: build_segmentation_model
 
@@ -132,15 +139,28 @@ class GeneralizedRCNNMultiTask(nn.Module):
 
         features = self.backbone(images.tensor)
 
+        # object detection
         if self.proposal_generator:
             proposals, proposal_losses = self.proposal_generator(images, features, gt_instances)
         else:
             assert "proposals" in batched_inputs[0]
             proposals = [x["proposals"].to(self.device) for x in batched_inputs]
             proposal_losses = {}
-
         _, detector_losses = self.roi_heads(images, features, proposals, gt_instances)
-        if self.vis_period > 0:     # vis_period>0,就添加图像可视化
+
+        # multi_label classification
+
+        if self.classifier is not None:
+            classifier_targets = [o['multi_labels'] for o in batched_inputs] \
+                                if "multi_labels" in batched_inputs[0] \
+                                else None
+            # classifier_features = [features[f] for f in self.classifier_in_features]
+            classifier_features = features[self.classifier_in_features[0]]
+            classifier_predict, multi_label_loss = self.classifier(classifier_features, classifier_targets)
+        else:
+            multi_label_losses = {}
+
+        if self.vis_period > 0:  # vis_period>0,就添加图像可视化
             storage = get_event_storage()
             if storage.iter % self.vis_period == 0:
                 self.visualize_training(batched_inputs, proposals)
@@ -148,6 +168,7 @@ class GeneralizedRCNNMultiTask(nn.Module):
         losses = {}
         losses.update(detector_losses)
         losses.update(proposal_losses)
+        losses.update(multi_label_loss)
         return losses
 
     def inference(self, batched_inputs, detected_instances=None, do_postprocess=True):
@@ -187,7 +208,7 @@ class GeneralizedRCNNMultiTask(nn.Module):
         if do_postprocess:
             processed_results = []
             for results_per_image, input_per_image, image_size in zip(
-                results, batched_inputs, images.image_sizes
+                    results, batched_inputs, images.image_sizes
             ):
                 height = input_per_image.get("height", image_size[0])
                 width = input_per_image.get("width", image_size[1])

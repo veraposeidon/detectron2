@@ -27,6 +27,13 @@ MODEL:
     NAME: "FastRCNNConvFCHead"
     NUM_FC: 2
     POOLER_RESOLUTION: 7
+  MULTI_TASK_ON: True
+  MULTI_TASK:
+    DETECTION_ON: True
+    CLASSIFICATION_ON: True
+    CLASSIFICATION_IN_FEATURES: ["p3"]
+    SEGMENTATION_ON: True
+    SEGMENTATION_IN_FEATURES: ["p3"]
 DATASETS:
   TRAIN: ("voc_al_train", )
   TEST: ("voc_al_test",)
@@ -38,5 +45,5 @@ SOLVER:
   WARMUP_FACTOR: 0.1
 INPUT:
   MIN_SIZE_TRAIN: (1200, )
-OUTPUT_DIR: "./output/model_test/"
+OUTPUT_DIR: "./output/model_test_multi/"
 

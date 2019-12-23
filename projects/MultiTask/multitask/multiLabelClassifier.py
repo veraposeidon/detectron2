@@ -45,7 +45,7 @@ class MultiLabelClassifier(nn.Module):
             nn.ReLU(inplace=True),
             # nn.BatchNorm1d(512),
             nn.Dropout(0.5),
-            nn.Linear(512, num_classes)
+            nn.Linear(512, num_classes)     # foreground classes
         )
 
         # 初始化权重
@@ -57,4 +57,22 @@ class MultiLabelClassifier(nn.Module):
         # flatten for fully connect
         output = output.view(output.size(0), -1)  # Flatten操作
         # predict
-        predict = self.bn_drop_lin(output)  # 全连接层
+        predict_logits = self.bn_drop_lin(output)  # 全连接层
+
+        if targets is not None:
+            y = torch.zeros_like(predict_logits)
+            for i in range(y.shape[0]):
+                for o in targets[i]:
+                    y[i][o] = 1
+            # TODO: 此处可加soft loss
+            loss = F.binary_cross_entropy_with_logits(predict_logits, y)
+        else:
+            loss = None
+        # TODO: 模仿roi_heads.fast_rcnn 的 softmax_cross_entropy_loss，进行log_accuracy
+
+        # 返回
+        return predict_logits, dict(mulbl_cls_loss = loss)
+
+
+def build_multilabel_classifier(cfg):
+    return MultiLabelClassifier(cfg)
