@@ -1,9 +1,6 @@
 # coding=utf-8
 
-import logging
-import numpy as np
 import torch
-from fvcore.nn import smooth_l1_loss
 from torch import nn
 from torch.nn import functional as F
 

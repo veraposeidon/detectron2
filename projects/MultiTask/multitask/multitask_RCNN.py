@@ -22,6 +22,8 @@ from detectron2.modeling import (
 )
 
 from .multiLabelClassifier import build_multilabel_classifier
+from .metal_segmentation import build_metal_segmentation_model
+
 
 __all__ = ["GeneralizedRCNNMultiTask", ]
 
@@ -49,6 +51,11 @@ class GeneralizedRCNNMultiTask(nn.Module):
             self.classifier = None
 
         # TODO: build_segmentation_model
+        if cfg.MODEL.MULTI_TASK.SEGMENTATION_ON:
+            self.metal_segmentation_in_features = cfg.MODEL.MULTI_TASK.SEGMENTATION_IN_FEATURES
+            self.metal_segmentation = build_metal_segmentation_model(cfg, self.backbone.out_feature_strides)
+        else:
+            self.metal_segmentation = None
 
         self.proposal_generator = build_proposal_generator(cfg, self.backbone.output_shape())
         self.roi_heads = build_roi_heads(cfg, self.backbone.output_shape())
