@@ -21,10 +21,11 @@ class MultiLabelClassifier(nn.Module):
     """
     用于对提取的特征层进行多标签分类，预测图像级别的缺陷分类
     """
+
     def __init__(self, cfg):
         super(MultiLabelClassifier, self).__init__()
 
-        num_classes = cfg.MODEL.ROI_HEADS.NUM_CLASSES   # numbers of foreground class
+        num_classes = cfg.MODEL.ROI_HEADS.NUM_CLASSES  # numbers of foreground class
         in_channels = cfg.MODEL.FPN.OUT_CHANNELS
 
         # 仿造fastai做法，用cat maxpool 和 avg pool 的做法
@@ -42,7 +43,7 @@ class MultiLabelClassifier(nn.Module):
             nn.ReLU(inplace=True),
             # nn.BatchNorm1d(512),
             nn.Dropout(0.5),
-            nn.Linear(512, num_classes)     # foreground classes
+            nn.Linear(512, num_classes)  # foreground classes
         )
 
         # 初始化权重
@@ -56,6 +57,7 @@ class MultiLabelClassifier(nn.Module):
         # predict
         predict_logits = self.bn_drop_lin(output)  # 全连接层
 
+        # one hot code
         if targets is not None:
             y = torch.zeros_like(predict_logits)
             for i in range(y.shape[0]):
@@ -68,7 +70,7 @@ class MultiLabelClassifier(nn.Module):
         # TODO: 模仿roi_heads.fast_rcnn 的 softmax_cross_entropy_loss，进行log_accuracy
 
         # 返回
-        return predict_logits, dict(mulbl_cls_loss = loss)
+        return predict_logits, dict(mulbl_cls_loss=loss)
 
 
 def build_multilabel_classifier(cfg):

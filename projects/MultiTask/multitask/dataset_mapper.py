@@ -20,6 +20,7 @@ class DatasetMapper:
     """
 
     def __init__(self, cfg, is_train=True):
+        self.num_seg_class = 2  # segmentation: foreground and background
         # crop
         if cfg.INPUT.CROP.ENABLED and is_train:
             self.crop_gen = T.RandomCrop(cfg.INPUT.CROP.TYPE, cfg.INPUT.CROP.SIZE)
@@ -27,7 +28,7 @@ class DatasetMapper:
         else:
             self.crop_gen = None
 
-        # get basic transform generator
+        # get basic transform generator, includes resizing and flipping.
         self.tfm_gens = utils.build_transform_gen(cfg, is_train)
 
         self.img_format = cfg.INPUT.FORMAT  # default type is "BGR"
@@ -109,10 +110,14 @@ class DatasetMapper:
                 sem_seg_gt = Image.open(f)
                 sem_seg_gt = np.asarray(sem_seg_gt, dtype="uint8")
             sem_seg_gt = transforms.apply_segmentation(sem_seg_gt)
-            sem_seg_gt = torch.as_tensor(sem_seg_gt.astype("long"))
-            dataset_dict["sem_seg"] = sem_seg_gt
+            # TODO: one-hot encoding after transformation
+            sem_gt = np.zeros((self.num_seg_class, sem_seg_gt.shape[0], sem_seg_gt.shape[1]), dtype="uint8")
+            for c in range(self.num_seg_class):
+                sem_gt[c][sem_seg_gt == c] = 1
+            # sem_gt = np.transpose(sem_gt, (1, 2, 0))  # for later transform
+            sem_gt = torch.as_tensor(sem_gt.astype("long"))
+            dataset_dict["sem_seg"] = sem_gt
 
-        # FIXME: 多标签目前直接使用numpy，后面有需要再做处理吧
         if "multi_labels" in dataset_dict:
             dataset_dict["multi_labels"] = dataset_dict.pop("multi_labels")
 

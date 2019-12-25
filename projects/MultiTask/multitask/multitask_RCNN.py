@@ -24,7 +24,6 @@ from detectron2.modeling import (
 from .multiLabelClassifier import build_multilabel_classifier
 from .metal_segmentation import build_metal_segmentation_model
 
-
 __all__ = ["GeneralizedRCNNMultiTask", ]
 
 
@@ -156,16 +155,26 @@ class GeneralizedRCNNMultiTask(nn.Module):
         _, detector_losses = self.roi_heads(images, features, proposals, gt_instances)
 
         # multi_label classification
-
         if self.classifier is not None:
             classifier_targets = [o['multi_labels'] for o in batched_inputs] \
-                                if "multi_labels" in batched_inputs[0] \
-                                else None
+                if "multi_labels" in batched_inputs[0] \
+                else None
             # classifier_features = [features[f] for f in self.classifier_in_features]
             classifier_features = features[self.classifier_in_features[0]]
-            classifier_predict, multi_label_losses = self.classifier(classifier_features, classifier_targets)
+            _, multi_label_losses = self.classifier(classifier_features, classifier_targets)
         else:
             multi_label_losses = {}
+
+        # metal segmentation model
+        if self.metal_segmentation is not None:
+            if 'sem_seg' in batched_inputs[0]:
+                segmentation_targets = self.preprocess_semseg_image(batched_inputs)
+            else:
+                segmentation_targets = None
+            segmentation_features = features[self.metal_segmentation_in_features[0]]
+            _, segmentation_losses = self.metal_segmentation(segmentation_features, segmentation_targets)
+        else:
+            segmentation_losses = {}
 
         if self.vis_period > 0:  # vis_period>0,就添加图像可视化
             storage = get_event_storage()
@@ -176,6 +185,7 @@ class GeneralizedRCNNMultiTask(nn.Module):
         losses.update(detector_losses)
         losses.update(proposal_losses)
         losses.update(multi_label_losses)
+        losses.update(segmentation_losses)
         return losses
 
     def inference(self, batched_inputs, detected_instances=None, do_postprocess=True):
@@ -231,5 +241,13 @@ class GeneralizedRCNNMultiTask(nn.Module):
         """
         images = [x["image"].to(self.device) for x in batched_inputs]
         images = [self.normalizer(x) for x in images]
+        images = ImageList.from_tensors(images, self.backbone.size_divisibility)
+        return images
+
+    def preprocess_semseg_image(self, batched_inputs):
+        """
+        Normalize, pad and batch the input images.
+        """
+        images = [x["sem_seg"].to(self.device) for x in batched_inputs]
         images = ImageList.from_tensors(images, self.backbone.size_divisibility)
         return images

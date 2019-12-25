@@ -33,7 +33,7 @@ MODEL:
     CLASSIFICATION_ON: True
     CLASSIFICATION_IN_FEATURES: ["p3"]
     SEGMENTATION_ON: True
-    SEGMENTATION_IN_FEATURES: ["p3"]
+    SEGMENTATION_IN_FEATURES: ["p4"]
 DATASETS:
   TRAIN: ("voc_al_train", )
   TEST: ("voc_al_test",)
@@ -44,6 +44,14 @@ SOLVER:
   MAX_ITER: 90000
   WARMUP_FACTOR: 0.1
 INPUT:
-  MIN_SIZE_TRAIN: (1200, )
+  # Size of the smallest side of the image during training
+  MIN_SIZE_TRAIN: (800,)
+  # Maximum size of the side of the image during training
+  MAX_SIZE_TRAIN: 1333
+  # Size of the smallest side of the image during testing. Set to zero to disable resize in testing.
+  MIN_SIZE_TEST: 800
+  # Maximum size of the side of the image during testing
+  MAX_SIZE_TEST: 1333
+
 OUTPUT_DIR: "./output/model_test_multi/"
 
