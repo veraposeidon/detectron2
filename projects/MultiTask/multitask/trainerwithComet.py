@@ -2,14 +2,15 @@
 
 from comet_experiment import Experiment
 import datetime
+import time
 import logging
 import os
 import torch
-from detectron2.engine import DefaultTrainer
+from detectron2.engine import SimpleTrainer, DefaultTrainer
 from detectron2.utils.events import CommonMetricPrinter, JSONWriter, TensorboardXWriter, EventWriter, get_event_storage
 
 
-class DefaultTrainerCometWriter(DefaultTrainer):
+class DefaultTrainerCometWriter(DefaultTrainer, SimpleTrainer):
     """
     用于添加comet.ml 添加记录信息
     """
@@ -52,6 +53,43 @@ class DefaultTrainerCometWriter(DefaultTrainer):
             JSONWriter(os.path.join(self.cfg.OUTPUT_DIR, "metrics.json")),
             TensorboardXWriter(self.cfg.OUTPUT_DIR),
         ]
+
+    # override run_step to control the pipe line. Mainly for the loss_dict.
+    def run_step(self):
+        """
+        Implement the standard training logic described above.
+        """
+        assert self.model.training, "[SimpleTrainer] model was changed to eval mode!"
+        start = time.perf_counter()
+        """
+        If your want to do something with the data, you can wrap the dataloader.
+        """
+        data = next(self._data_loader_iter)
+        data_time = time.perf_counter() - start
+
+        """
+        If your want to do something with the losses, you can wrap the model.
+        """
+        loss_dict = self.model(data)
+        losses = sum(loss for loss in loss_dict.values())
+        self._detect_anomaly(losses, loss_dict)
+
+        metrics_dict = loss_dict
+        metrics_dict["data_time"] = data_time
+        self._write_metrics(metrics_dict)
+
+        """
+        If you need accumulate gradients or something similar, you can
+        wrap the optimizer with your custom `zero_grad()` method.
+        """
+        self.optimizer.zero_grad()
+        losses.backward()
+
+        """
+        If you need gradient clipping/scaling or other processing, you can
+        wrap the optimizer with your custom `step()` method.
+        """
+        self.optimizer.step()
 
 
 class CommonMetricPrinterWithComet(CommonMetricPrinter):
