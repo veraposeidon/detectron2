@@ -38,8 +38,8 @@ DATASETS:
   TRAIN: ("voc_al_train", )
   TEST: ("voc_al_test",)
 SOLVER:
-  IMS_PER_BATCH: 4
-  BASE_LR: 0.005
+  IMS_PER_BATCH: 8
+  BASE_LR: 0.0025
   STEPS: (60000, 80000)
   MAX_ITER: 90000
   WARMUP_FACTOR: 0.1
@@ -53,5 +53,5 @@ INPUT:
   # Maximum size of the side of the image during testing
   MAX_SIZE_TEST: 1333
 
-OUTPUT_DIR: "./output/model_test_multi/"
+OUTPUT_DIR: "./output/model_multiTask_Test/"
 

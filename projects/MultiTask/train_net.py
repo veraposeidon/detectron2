@@ -17,10 +17,10 @@ from detectron2.engine import default_argument_parser, default_setup, launch
 from detectron2.evaluation import PascalVOCDetectionEvaluator, DatasetEvaluators, verify_results
 from detectron2.utils.logger import setup_logger
 
-from multitask import DatasetMapper, add_multitask_config, DefaultTrainerCometWriter
+from multitask import DatasetMapper, add_multitask_config, MultiTaskTrainer
 
 
-class Trainer(DefaultTrainerCometWriter):
+class Trainer(MultiTaskTrainer):
     @classmethod
     def build_evaluator(cls, cfg, dataset_name):
         output_folder = os.path.join(cfg.OUTPUT_DIR, "inference")

@@ -10,9 +10,9 @@ from detectron2.engine import SimpleTrainer, DefaultTrainer
 from detectron2.utils.events import CommonMetricPrinter, JSONWriter, TensorboardXWriter, EventWriter, get_event_storage
 
 
-class DefaultTrainerCometWriter(DefaultTrainer, SimpleTrainer):
+class MultiTaskTrainer(DefaultTrainer, SimpleTrainer):
     """
-    用于添加comet.ml 添加记录信息
+    用于添加 comet.ml 添加记录信息
     """
     @classmethod
     def build_evaluator(cls, cfg, dataset_name):
@@ -70,13 +70,16 @@ class DefaultTrainerCometWriter(DefaultTrainer, SimpleTrainer):
         """
         If your want to do something with the losses, you can wrap the model.
         """
-        loss_dict = self.model(data)
-        losses = sum(loss for loss in loss_dict.values())
+        loss_dict, losses = self.model(data)
+        # losses = sum(loss for loss in loss_dict.values())
         self._detect_anomaly(losses, loss_dict)
 
         metrics_dict = loss_dict
         metrics_dict["data_time"] = data_time
         self._write_metrics(metrics_dict)
+
+        # TODO: multi-task loss layer
+
 
         """
         If you need accumulate gradients or something similar, you can

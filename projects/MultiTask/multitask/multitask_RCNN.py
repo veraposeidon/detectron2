@@ -23,6 +23,7 @@ from detectron2.modeling import (
 
 from .multiLabelClassifier import build_multilabel_classifier
 from .metal_segmentation import build_metal_segmentation_model
+from .multi_task_loss import build_multitask_loss_layer
 
 __all__ = ["GeneralizedRCNNMultiTask", ]
 
@@ -40,24 +41,36 @@ class GeneralizedRCNNMultiTask(nn.Module):
         super().__init__()
 
         self.device = torch.device(cfg.MODEL.DEVICE)
+
+        # build feature extraction backbone
         self.backbone = build_backbone(cfg)
 
-        # TODO: build_classification_model
+        # build classification model
         if cfg.MODEL.MULTI_TASK.CLASSIFICATION_ON:
             self.classifier_in_features = cfg.MODEL.MULTI_TASK.CLASSIFICATION_IN_FEATURES
             self.classifier = build_multilabel_classifier(cfg)
         else:
             self.classifier = None
 
-        # TODO: build_segmentation_model
+        # build segmentation model
         if cfg.MODEL.MULTI_TASK.SEGMENTATION_ON:
             self.metal_segmentation_in_features = cfg.MODEL.MULTI_TASK.SEGMENTATION_IN_FEATURES
             self.metal_segmentation = build_metal_segmentation_model(cfg, self.backbone.out_feature_strides)
         else:
             self.metal_segmentation = None
 
-        self.proposal_generator = build_proposal_generator(cfg, self.backbone.output_shape())
-        self.roi_heads = build_roi_heads(cfg, self.backbone.output_shape())
+        # build object detection model
+        if cfg.MODEL.MULTI_TASK.DETECTION_ON:
+            self.proposal_generator = build_proposal_generator(cfg, self.backbone.output_shape())
+            self.roi_heads = build_roi_heads(cfg, self.backbone.output_shape())
+        else:
+            self.proposal_generator = None
+            self.roi_heads = None
+
+        # TODO: build multi-task layer
+        self.multi_loss_layer = build_multitask_loss_layer(cfg)
+
+        # other setting
         self.vis_period = cfg.VIS_PERIOD
         self.input_format = cfg.INPUT.FORMAT
 
@@ -66,7 +79,7 @@ class GeneralizedRCNNMultiTask(nn.Module):
         pixel_mean = torch.Tensor(cfg.MODEL.PIXEL_MEAN).to(self.device).view(num_channels, 1, 1)
         pixel_std = torch.Tensor(cfg.MODEL.PIXEL_STD).to(self.device).view(num_channels, 1, 1)
         self.normalizer = lambda x: (x - pixel_mean) / pixel_std
-        self.to(self.device)
+        self.to(self.device)    # all to cuda
 
     def visualize_training(self, batched_inputs, proposals):
         """
@@ -132,7 +145,10 @@ class GeneralizedRCNNMultiTask(nn.Module):
         if not self.training:
             return self.inference(batched_inputs)
 
+        # preprocess data
+        # images for input
         images = self.preprocess_image(batched_inputs)
+        # instance for object detection
         if "instances" in batched_inputs[0]:
             gt_instances = [x["instances"].to(self.device) for x in batched_inputs]
         elif "targets" in batched_inputs[0]:
@@ -142,10 +158,21 @@ class GeneralizedRCNNMultiTask(nn.Module):
             gt_instances = [x["targets"].to(self.device) for x in batched_inputs]
         else:
             gt_instances = None
+        # classification data
+        if "multi_labels" in batched_inputs[0]:
+            classifier_targets = [o['multi_labels'] for o in batched_inputs]
+        else:
+            classifier_targets = None
+        # segmentation data
+        if 'sem_seg' in batched_inputs[0]:
+            segmentation_targets = self.preprocess_semseg_image(batched_inputs)
+        else:
+            segmentation_targets = None
 
+        # backbone extract features
         features = self.backbone(images.tensor)
 
-        # object detection
+        # task: object detection
         if self.proposal_generator:
             proposals, proposal_losses = self.proposal_generator(images, features, gt_instances)
         else:
@@ -154,39 +181,38 @@ class GeneralizedRCNNMultiTask(nn.Module):
             proposal_losses = {}
         _, detector_losses = self.roi_heads(images, features, proposals, gt_instances)
 
-        # multi_label classification
+        # task: multi-label classification
         if self.classifier is not None:
-            classifier_targets = [o['multi_labels'] for o in batched_inputs] \
-                if "multi_labels" in batched_inputs[0] \
-                else None
             # classifier_features = [features[f] for f in self.classifier_in_features]
             classifier_features = features[self.classifier_in_features[0]]
             _, multi_label_losses = self.classifier(classifier_features, classifier_targets)
         else:
             multi_label_losses = {}
 
-        # metal segmentation model
+        # task: metal segmentation model
         if self.metal_segmentation is not None:
-            if 'sem_seg' in batched_inputs[0]:
-                segmentation_targets = self.preprocess_semseg_image(batched_inputs)
-            else:
-                segmentation_targets = None
             segmentation_features = features[self.metal_segmentation_in_features[0]]
             _, segmentation_losses = self.metal_segmentation(segmentation_features, segmentation_targets)
         else:
             segmentation_losses = {}
 
-        if self.vis_period > 0:  # vis_period>0,就添加图像可视化
+        # visualize
+        if self.vis_period > 0:  # vis_period > 0, 就添加图像可视化
             storage = get_event_storage()
             if storage.iter % self.vis_period == 0:
                 self.visualize_training(batched_inputs, proposals)
 
+        # loss dict
         losses = {}
         losses.update(detector_losses)
         losses.update(proposal_losses)
         losses.update(multi_label_losses)
         losses.update(segmentation_losses)
-        return losses
+
+        # TODO: multi_loss layer computation.
+        multi_loss = self.multi_loss_layer(losses)
+
+        return losses, multi_loss
 
     def inference(self, batched_inputs, detected_instances=None, do_postprocess=True):
         """
