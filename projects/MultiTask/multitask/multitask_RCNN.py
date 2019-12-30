@@ -209,7 +209,6 @@ class GeneralizedRCNNMultiTask(nn.Module):
         losses.update(multi_label_losses)
         losses.update(segmentation_losses)
 
-        # TODO: multi_loss layer computation.
         multi_loss = self.multi_loss_layer(losses)
 
         return losses, multi_loss

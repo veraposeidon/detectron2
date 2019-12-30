@@ -72,14 +72,12 @@ class MultiTaskTrainer(DefaultTrainer, SimpleTrainer):
         """
         loss_dict, losses = self.model(data)
         # losses = sum(loss for loss in loss_dict.values())
-        self._detect_anomaly(losses, loss_dict)
+        file_names = [o['file_name'] for o in data]
+        self._detect_anomaly(losses, loss_dict, file_names)
 
         metrics_dict = loss_dict
         metrics_dict["data_time"] = data_time
         self._write_metrics(metrics_dict)
-
-        # TODO: multi-task loss layer
-
 
         """
         If you need accumulate gradients or something similar, you can
@@ -93,6 +91,25 @@ class MultiTaskTrainer(DefaultTrainer, SimpleTrainer):
         wrap the optimizer with your custom `step()` method.
         """
         self.optimizer.step()
+
+    def _detect_anomaly(self, losses, loss_dict, file_names):
+        """
+        遇到错误报样本文件名，进行排查
+        :param losses:
+        :param loss_dict:
+        :param file_names:
+        :return:
+        """
+        if not torch.isfinite(losses).all():
+            # 打印文件名
+            for o in file_names:
+                print(o)
+
+            raise FloatingPointError(
+                "Loss became infinite or NaN at iteration={}!\nloss_dict = {}".format(
+                    self.iter, loss_dict
+                )
+            )
 
 
 class CommonMetricPrinterWithComet(CommonMetricPrinter):
